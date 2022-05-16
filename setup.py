@@ -25,16 +25,17 @@ setup (
  install_requires = install_requires,
  python_requires='>=3.7', # any python greater than 2.7
  entry_points='''
-        [console_scripts]
-        cver=cver.__main__:main
+        'console_scripts': [
+                                'slide-extractor=slide_extractor:trigger',
+                        ]
     ''',
- author="Vivek Anand",
+ author="Vivek Anand, Ashish Manglani",
  keyword="slide-extractor, slide_extractor, extractor, slide, slide extractor",
  long_description=README,
  long_description_content_type="text/markdown",
  license='MIT',
- url='https://github.com/CITGuru/cver',
- download_url='https://github.com/CITGuru/cver/archive/1.0.0.tar.gz',
+ url='',
+ download_url='',
   dependency_links=dependency_links,
   author_email='vivek17212797@gmail.com',
   classifiers=[

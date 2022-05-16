@@ -107,7 +107,3 @@ class extract_slides:
 
     def save_pdf(self):
         self.first_img.save(f'./{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))
-
-options = cli_args()
-#print(options.diff,options.skip)
-extract_slides(options.path, int(options.diff), int(options.skip))
