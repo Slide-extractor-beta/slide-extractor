@@ -70,8 +70,10 @@ class extract_slides:
                         prev = np.zeros(frame.shape)
                     currg = rgb2gray(frame)
                     prevg = rgb2gray(prev)
-
-                    diff3 = abs(np.sum(np.array(currg- prevg)))/np.sum(np.array(currg))
+                    currgSum = np.sum(np.array(currg))
+                    diff3 = abs(np.sum(np.array(currg- prevg)))
+                    if currgSum>0:
+                        diff3/=currgSum
                     if diff3 > self.conf:
 
                         if first:
@@ -94,7 +96,10 @@ class extract_slides:
 
                     duration = count / fps
                     pbar.update(fps * self.skip)
-                    print(f"\rFound {slide} slide   Differnce level: {diff3}", end='')#, flush=True
+                    dicti = {"Found Slide": slide, "Difference Level": diff3}
+                    #pbar.set_description_str(desc=f"\rFound {slide} slide   Differnce level: {diff3}")
+                    pbar.set_postfix(ordered_dict=dicti)
+                    #print(f"\rFound {slide} slide   Differnce level: {diff3}", end='')#, flush=True
                     # print("Processed : ",duration ," secs ",100*duration/length," %", end="\r", flush=True)
 
                     currentframe += 1
