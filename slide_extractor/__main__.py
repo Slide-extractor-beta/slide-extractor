@@ -1,4 +1,7 @@
-from . import trigger
+from __init__ import trigger
 
-if __name__=="__main__":
+def main():
     trigger()
+
+if __name__== "__main__":
+    main()

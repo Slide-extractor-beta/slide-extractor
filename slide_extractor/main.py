@@ -13,7 +13,8 @@ def cli_args():
     parser = optparse.OptionParser()
     parser.add_option("-p", "--path", dest="path", help="Path of the video")
     parser.add_option("-s", "--skip", dest="skip", help="Skip seconds for the video. Default is 1 sec",default=1)
-    parser.add_option("-d", "--diff", dest="diff", help="Threshold Differenec level with previous slide beyond which the current slide gets captured. Default value id 0.008",default=0.008)
+    parser.add_option("-d", "--diff", dest="diff", help="""Threshold Difference level with previous slide beyond which
+                      the current slide gets captured. Default value id 0.008""",default=0.008)
 
     (options, arguments) = parser.parse_args()
     if not options.path:
@@ -73,15 +74,16 @@ class extract_slides:
                     diff3 = abs(np.sum(np.array(currg- prevg)))/np.sum(np.array(currg))
                     if diff3 > self.conf:
 
-                        if (first):
-                            first = False
-                            self.first_img = frame
+                        if first:
+                            # self.first_img = frame
                             self.first_img = Image.fromarray(np.uint8(frame)).convert('RGB')
                         prev = frame
                         frame = Image.fromarray(np.uint8(frame)).convert('RGB')
                         # print(type(frame))
-
-                        self.images.append(frame)
+                        if not first:
+                            self.images.append(frame)
+                        else:
+                            first = False
 
                         slide += 1
                     #print(type(fps), type(self.skip))
@@ -106,4 +108,7 @@ class extract_slides:
         self.save_pdf()
 
     def save_pdf(self):
-        self.first_img.save(f'./{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))
+        if self.first_img == 0:
+            print("No slides found, nothing to save")
+        else:
+            self.first_img.save(f'./{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))
