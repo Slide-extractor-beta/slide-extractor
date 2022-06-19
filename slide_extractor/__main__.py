@@ -1,4 +1,4 @@
-from __init__ import trigger
+from .__init__ import trigger
 
 def main():
     trigger()

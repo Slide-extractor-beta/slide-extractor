@@ -32,6 +32,7 @@ def rgb2gray(rgb):
 class extract_slides:
     def __init__(self, path, confidence, skip):
         self.path = path
+        self.destination = os.path.dirname(path)
         self.conf = confidence
         self.skip = skip
         self.first_img = 0
@@ -39,6 +40,7 @@ class extract_slides:
 
         self.pdf_name = (self.path_leaf(self.path)).split('.')[0]
         self.processVideo()
+        
 
     def path_leaf(self, path):
         head, tail = ntpath.split(path)
@@ -116,4 +118,4 @@ class extract_slides:
         if self.first_img == 0:
             print("No slides found, nothing to save")
         else:
-            self.first_img.save(f'./{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))
+            self.first_img.save(f'{self.destination}/{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))

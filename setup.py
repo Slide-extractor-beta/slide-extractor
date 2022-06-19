@@ -20,7 +20,7 @@ README = (HERE / "README.md").read_text()
 setup (
  name = 'slide_extractor',
  description = 'A simple commandline app to extract slides from videos,lectures and presentations',
- version = '1.0.0',
+ version = '1.0.6',
  packages = find_packages(), # list of all packages
  install_requires = ['colorama', 'numpy', 'opencv-python', 'Pillow', 'tqdm'],
  python_requires='>=3.5', # any python greater than 2.7

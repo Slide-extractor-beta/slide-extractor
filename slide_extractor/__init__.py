@@ -1,4 +1,4 @@
-from main import extract_slides, cli_args
+from .main import extract_slides, cli_args
 
 def trigger():
     options = cli_args()
