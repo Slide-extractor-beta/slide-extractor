@@ -80,9 +80,9 @@ class extract_slides:
 
                         if first:
                             # self.first_img = frame
-                            self.first_img = Image.fromarray(np.uint8(frame)).convert('RGB')
+                            self.first_img = Image.fromarray(cv2.cvtColor(np.uint8(frame), cv2.COLOR_BGR2RGB))
                         prev = frame
-                        frame = Image.fromarray(np.uint8(frame)).convert('RGB')
+                        frame = Image.fromarray(cv2.cvtColor(np.uint8(frame), cv2.COLOR_BGR2RGB))
                         # print(type(frame))
                         if not first:
                             self.images.append(frame)
