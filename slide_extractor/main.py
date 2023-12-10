@@ -1,8 +1,11 @@
 import optparse #to get cli arguments
 import os
+import sys
 import cv2
+import json
 from cv2 import CAP_PROP_FRAME_COUNT
 import numpy as np
+import pafy
 from PIL import Image, ImageOps
 from statistics import mean
 import ntpath
@@ -12,13 +15,31 @@ def cli_args():
 
     parser = optparse.OptionParser()
     parser.add_option("-p", "--path", dest="path", help="Path of the video")
+    parser.add_option("-u", "--url", dest="url", help="Url of the video youtube video", default="")
     parser.add_option("-s", "--skip", dest="skip", help="Skip seconds for the video. Default is 1 sec",default=1)
     parser.add_option("-d", "--diff", dest="diff", help="""Threshold Difference level with previous slide beyond which
                       the current slide gets captured. Default value id 0.008""",default=0.008)
+    parser.add_option("-c", "--coor", dest="coor", help="""cordinates you want to capture, diagonally opposite start and end cords""", default=str([[0,0],[sys.maxsize,sys.maxsize]]))
 
     (options, arguments) = parser.parse_args()
-    if not options.path:
+    if not options.path and not options.url:
         parser.error("[-] please specify the video path use --help for help")
+
+    try:
+        type_check = json.loads(options.coor)
+        type_check = [[int(value) for value in row] for row in type_check]
+        type_check = np.array(type_check)
+        if type_check.shape != (2,2):
+            parser.error("[-] coordinates need to be a list of list of shape 2x2, diagonally opposite start and end cords --help for help")
+        elif np.any(type_check<0):
+            parser.error("[-] coordinates need to be positive values --help for help")
+        options.coor = type_check
+    except json.JSONDecodeError as e:
+        parser.error("[-] coordinates need to be a list of list of shape 2x2, diagonally opposite start and end cords --help for help")
+
+
+    # except Exception:
+    #     parser.error("[-] coordinates need to be a list of list of coordinates --help for help")
     return options
 
 def rgb2gray(rgb):
@@ -28,17 +49,34 @@ def rgb2gray(rgb):
 
     return gray
 
+def arrange_coords(coor,frame_shape):
+    if coor[0][0]>coor[1][0]:
+        coor[0],coor[1] = coor[1],coor[0]
+    coor[1] = [min(coor[1][0],frame_shape[0]),min(coor[1][1],frame_shape[1])]
+    if coor[0][0]>frame_shape[0] or coor[0][1]>frame_shape[1]:
+        raise Exception
+    return coor
+
 
 class extract_slides:
-    def __init__(self, path, confidence, skip):
+    def __init__(self, path, confidence, skip, coor, url):
         self.path = path
-        self.destination = os.path.dirname(path)
+        self.destination = os.getcwd()
+        self.pdf_name = "slides"
+        if self.path:
+            self.destination = os.path.dirname(path)
+            self.pdf_name = (self.path_leaf(self.path)).split('.')[0]
+        if not self.path:
+            video = pafy.new(url)
+            best = video.getbest(preftype="mp4")
+            self.path = best.url
+
         self.conf = confidence
         self.skip = skip
         self.first_img = 0
         self.images = []
+        self.coor = coor
 
-        self.pdf_name = (self.path_leaf(self.path)).split('.')[0]
         self.processVideo()
         
 
@@ -53,7 +91,11 @@ class extract_slides:
         length = total_frame_count / fps
         # pbar = tqdm(total = 100)
         currentframe = 0
-        prev = 0
+        ret, frame = cam.read()
+        prev = np.zeros(frame.shape)
+        print("Frame shape", frame.shape)
+        self.coor = arrange_coords(self.coor,frame.shape)
+        print("Finding difference is frame coords: ",self.coor)
         # images = []
         first = True
 
@@ -68,10 +110,12 @@ class extract_slides:
 
                 if ret:
 
-                    if first:
-                        prev = np.zeros(frame.shape)
-                    currg = rgb2gray(frame)
-                    prevg = rgb2gray(prev)
+                    # if first:
+                    #     prev = np.zeros(frame.shape)
+                    #     print(frame.shape)
+                    #frame_to_differentiate = frame[self.coor[0][1]:self.coor[1][1], self.coor[0][0]:self.coor[1][0]] # ROI = frame[y1:y2, x1:x2]
+                    currg = rgb2gray(frame)[self.coor[0][0]:self.coor[1][0],self.coor[0][1]:self.coor[1][1]] # ROI = frmae[y1:y2,x1:x2]
+                    prevg = rgb2gray(prev)[self.coor[0][0]:self.coor[1][0],self.coor[0][1]:self.coor[1][1]]
                     currgSum = np.sum(np.array(currg))
                     diff3 = abs(np.sum(np.array(currg- prevg)))
                     if currgSum>0:
@@ -79,11 +123,12 @@ class extract_slides:
                     if diff3 > self.conf:
 
                         if first:
-                            # self.first_img = frame
                             self.first_img = Image.fromarray(np.uint8(frame)).convert('RGB')
+                            print("\nPlease check the preview image for the area you want to be compared")
+                            cv2.imshow('image', currg)
+                            cv2.waitKey(0)
                         prev = frame
                         frame = Image.fromarray(np.uint8(frame)).convert('RGB')
-                        # print(type(frame))
                         if not first:
                             self.images.append(frame)
                         else:
@@ -118,4 +163,4 @@ class extract_slides:
         if self.first_img == 0:
             print("No slides found, nothing to save")
         else:
-            self.first_img.save(f'{self.destination}/{self.pdf_name}.pdf', save_all=True, append_images=list(self.images))
+            self.first_img.save(os.path.join(self.destination,f"{self.pdf_name}.pdf"), save_all=True, append_images=list(self.images))
